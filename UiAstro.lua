@@ -399,17 +399,17 @@ function XynorUI:CreateWindow(opts)
             tweenSine(authorLbl, 0.18, { TextTransparency = 0 }):Play()
         end)
 
-        task.delay(0.04)
+        task.wait(0.04)
         tweenBack(MinBtn, 0.15, { BackgroundTransparency = 0 }):Play()
         task.delay(0.02, function()
             tweenBack(CloseBtn, 0.15, { BackgroundTransparency = 0 }):Play()
         end)
 
-        task.delay(0.05)
+        task.wait(0.05)
         tweenExpo(TabPanel, 0.2, { BackgroundTransparency = 0 }):Play()
         tweenExpo(Separator, 0.2, { BackgroundTransparency = 0 }):Play()
 
-        task.delay(0.06)
+        task.wait(0.06)
         local children = TabPanel:GetChildren()
         local delay = 0
         for _, child in ipairs(children) do
@@ -1762,35 +1762,35 @@ local function LoadVxnityHub()
 
     ReactTab:Button({ Title = "🔥 ULTRA SPEED", Desc = "Velocidad ILEGAL maxima",
         Callback = function()
-            currentReactPower = 5e18; P.reactPower = currentReactPower
+            currentReactPower = 500000000000000; P.reactPower = currentReactPower
             enableReactHook(); applyReactInstant(currentReactPower)
             XynorUI:Notify({ Title = "ULTRA SPEED", Desc = "Ball a velocidad maxima!", Duration = 2 })
         end
     })
     ReactTab:Button({ Title = "💀 MEGA POWER", Desc = "Potencia extrrema",
         Callback = function()
-            currentReactPower = 1e25; P.reactPower = currentReactPower
+            currentReactPower = 9000000000000000; P.reactPower = currentReactPower
             enableReactHook(); applyReactInstant(currentReactPower)
             XynorUI:Notify({ Title = "MEGA POWER", Desc = "Potencia extrema activada", Duration = 2 })
         end
     })
     ReactTab:Button({ Title = "⚡ HYPER VELOCITY", Desc = "Hyper velocidad instantanea",
         Callback = function()
-            currentReactPower = 2e22; P.reactPower = currentReactPower
+            currentReactPower = 5000000000000000; P.reactPower = currentReactPower
             enableReactHook(); applyReactInstant(currentReactPower)
             XynorUI:Notify({ Title = "HYPER", Desc = "Hyper velocidad maxima", Duration = 2 })
         end
     })
     ReactTab:Button({ Title = "🚀 ULTIMATE KICK", Desc = "Patada definitiva",
         Callback = function()
-            currentReactPower = 8e20; P.reactPower = currentReactPower
+            currentReactPower = 1000000000000000; P.reactPower = currentReactPower
             enableReactHook(); applyReactInstant(currentReactPower)
             XynorUI:Notify({ Title = "ULTIMATE", Desc = "Patada definitiva", Duration = 2 })
         end
     })
     ReactTab:Button({ Title = "💥 MAX POWER", Desc = "Potencia maxima absoluta",
         Callback = function()
-            currentReactPower = 1e28; P.reactPower = currentReactPower
+            currentReactPower = 9000000000000000; P.reactPower = currentReactPower
             enableReactHook(); applyReactInstant(currentReactPower)
             XynorUI:Notify({ Title = "MAX POWER", Desc = "Potencia maxima absoluta", Duration = 2 })
         end
@@ -1799,7 +1799,7 @@ local function LoadVxnityHub()
     -- tmbuzz v1 — snap magnético anti-jitter
     ReactTab:Button({ Title = "🌀 HYPER SNAP", Desc = "Snap magnetico super rapido",
         Callback = function()
-            currentReactPower = 3e20; P.reactPower = currentReactPower
+            currentReactPower = 800000000000000; P.reactPower = currentReactPower
             enableReactHook()
             local ball = _G._VxRBall; local hrp = _G._VxRHRP
             if ball and hrp then
@@ -1816,7 +1816,7 @@ local function LoadVxnityHub()
     -- cholo v1 — enganche en cambios de dirección
     ReactTab:Button({ Title = "💀 MEGA LOCK", Desc = "Lock super enganche pesado",
         Callback = function()
-            currentReactPower = 5e25; P.reactPower = currentReactPower
+            currentReactPower = 9000000000000000; P.reactPower = currentReactPower
             enableReactHook()
             local ball = _G._VxRBall; local hrp = _G._VxRHRP
             if ball and hrp then
@@ -1832,7 +1832,7 @@ local function LoadVxnityHub()
     -- erubar v1 — pivot, 0 reach visual
     ReactTab:Button({ Title = "🔴 ULTRA PIVOT", Desc = "Pivot ultra rapido + pegada",
         Callback = function()
-            currentReactPower = 4e22; P.reactPower = currentReactPower
+            currentReactPower = 8000000000000000; P.reactPower = currentReactPower
             enableReactHook()
             local ball = _G._VxRBall; local hrp = _G._VxRHRP
             if ball and hrp then
@@ -1849,7 +1849,7 @@ local function LoadVxnityHub()
     -- Kenyah v5 — predicción + snap + corrección automática
     ReactTab:Button({ Title = "✝️ KENYAH MAX", Desc = "Max power + predicion",
         Callback = function()
-            currentReactPower = 6e23; P.reactPower = currentReactPower
+            currentReactPower = 9000000000000000; P.reactPower = currentReactPower
             enableReactHook()
             local ball = _G._VxRBall; local hrp = _G._VxRHRP
             if ball and hrp then
@@ -1867,7 +1867,7 @@ local function LoadVxnityHub()
     -- xrea react I — control aéreo total
     ReactTab:Button({ Title = "💠 AERO MAX", Desc = "Aereo ultra control total",
         Callback = function()
-            currentReactPower = 5e22; P.reactPower = currentReactPower
+            currentReactPower = 9000000000000000; P.reactPower = currentReactPower
             enableReactHook()
             local ball = _G._VxRBall; local hrp = _G._VxRHRP
             if ball and hrp then
@@ -1886,7 +1886,7 @@ local function LoadVxnityHub()
     -- xrea react II — doble pulso
     ReactTab:Button({ Title = "⚡ DUAL PULSE", Desc = "Doble pulso instantaneo",
         Callback = function()
-            currentReactPower = 7e22; P.reactPower = currentReactPower
+            currentReactPower = 9000000000000000; P.reactPower = currentReactPower
             enableReactHook()
             local ball = _G._VxRBall; local hrp = _G._VxRHRP
             if ball and hrp then
@@ -1909,7 +1909,7 @@ local function LoadVxnityHub()
     -- xrea react III — omni con corrección automática
     ReactTab:Button({ Title = "🌐 OMNI MAX", Desc = "Omni ultra + autocorreccion",
         Callback = function()
-            currentReactPower = 8e22; P.reactPower = currentReactPower
+            currentReactPower = 9000000000000000; P.reactPower = currentReactPower
             enableReactHook()
             local ball = _G._VxRBall; local hrp = _G._VxRHRP
             if ball and hrp then
@@ -1981,7 +1981,7 @@ local function LoadVxnityHub()
     })
     ReactTab:Button({ Title = "🔥 UNLIMITED Mode", Desc = "No speed limit",
         Callback = function()
-            ballSpeedMult = 1e15; P.ballSpeedMult = ballSpeedMult
+            ballSpeedMult = 999999999; P.ballSpeedMult = ballSpeedMult
             XynorUI:Notify({ Title = "Velocity", Desc = "UNLIMITED", Duration = 1.5 })
         end
     })
@@ -1990,7 +1990,7 @@ local function LoadVxnityHub()
     ReactTab:Slider({
         Title = "React Power (base)",
         Desc = "Potencia base maxima",
-        Value = { Min = 1e18, Max = 1e30, Default = 1e22 },
+        Value = { Min = 1000, Max = 999999999, Default = 500000 },
         Callback = function(val)
             currentReactPower = val; P.reactPower = val
         end
@@ -2683,13 +2683,13 @@ local function LoadVxnityHub()
 
     -- Tabla de configuraciones por nivel de react (15, 30, 45 ... 100)
     local REACT2_CONFIGS = {
-        [15]  = { power = 1e18, speed = 12000,  snap = 0.06, desc = "Smooth reaction" },
-        [30]  = { power = 5e18, speed = 22000,  snap = 0.05, desc = "Responsive" },
-        [45]  = { power = 2e19, speed = 38000,  snap = 0.04, desc = "Fast reaction" },
-        [60]  = { power = 8e19, speed = 58000,  snap = 0.035, desc = "Very fast" },
-        [75]  = { power = 4e20, speed = 80000,  snap = 0.025, desc = "Ultra fast" },
-        [90]  = { power = 2e21, speed = 110000, snap = 0.018, desc = "Hyper fast" },
-        [100] = { power = 1e22, speed = 150000, snap = 0.012, desc = "MAX reaction" },
+        [15]  = { power = 200000, speed = 12000,  snap = 0.06, desc = "Smooth reaction" },
+        [30]  = { power = 400000, speed = 22000,  snap = 0.05, desc = "Responsive" },
+        [45]  = { power = 700000, speed = 38000,  snap = 0.04, desc = "Fast reaction" },
+        [60]  = { power = 1200000, speed = 58000,  snap = 0.035, desc = "Very fast" },
+        [75]  = { power = 2000000, speed = 80000,  snap = 0.025, desc = "Ultra fast" },
+        [90]  = { power = 4000000, speed = 110000, snap = 0.018, desc = "Hyper fast" },
+        [100] = { power = 8000000, speed = 150000, snap = 0.012, desc = "MAX reaction" },
     }
 
     local react2Active = false
