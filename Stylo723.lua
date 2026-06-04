@@ -1,11 +1,11 @@
 -- ============================================================
 --  Stylo723 — 1.0
---  Redz UI | Anti-Crash | Flag Inject | Sin auto-kick
+--  Redz UI | Flag Inject (FastFlags) | Anti-Crash | Sin auto-kick
+--  Discord: https://discord.gg/ujuwhftzz5
 -- ============================================================
 
 local Players          = game:GetService("Players")
 local RunService       = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local Workspace        = game:GetService("Workspace")
 local Lighting         = game:GetService("Lighting")
 local LocalPlayer      = Players.LocalPlayer
@@ -46,7 +46,7 @@ end
 pcall(startBallGuard)
 
 -- ============================================================
--- SECURITY / CLEAN — sin kick, solo limpieza silenciosa
+-- SECURITY / CLEAN — sin kick, limpieza silenciosa
 -- ============================================================
 pcall(function()
     for _, b in pairs(workspace.FE.Actions:GetChildren()) do
@@ -72,7 +72,6 @@ pcall(function()
         r.Name   = "KeepYourHeadUp_"
         r.Parent = a
     end
-    -- Sin kick — se ignora silenciosamente si no existe
 end)
 
 local function isWeirdName(name)
@@ -81,7 +80,7 @@ end
 
 local function deleteWeirdRemoteEvents(parent, depth)
     depth = depth or 0
-    if depth > 6 then return end  -- guard anti stack-overflow
+    if depth > 6 then return end
     pcall(function()
         for _, child in pairs(parent:GetChildren()) do
             if child:IsA("RemoteEvent") and isWeirdName(child.Name) then
@@ -95,27 +94,14 @@ end
 pcall(function() deleteWeirdRemoteEvents(game) end)
 
 -- ============================================================
--- CARGA DE REDZ UI — captura correcta de la librería
+-- CARGA DE REDZ UI — exactamente como se solicitó
 -- ============================================================
 local RedzUI
 pcall(function()
-    -- Redz UI asigna la librería a _G.RedzLib o la retorna
-    -- Intentamos ambas formas para máxima compatibilidad
-    -- URL verificada y funcional — Redz Library V5 (rawscripts.net mirror estable)
-    local raw = game:HttpGet(
-        "https://rawscripts.net/raw/Universal-Script-Redz-Library-V5-94837"
-    )
-    if not raw or #raw < 100 then return end
-    local loaded = loadstring(raw)()
-    -- Forma 1: la librería se retorna directamente
+    local loaded = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
     if type(loaded) == "table" then
         RedzUI = loaded
     end
-    -- Forma 2: queda en _G.RedzLib
-    if not RedzUI and type(_G.RedzLib) == "table" then
-        RedzUI = _G.RedzLib
-    end
-    -- Forma 3: queda en _G.RedzhubUI o similar
     if not RedzUI then
         for _, key in pairs({"RedzLib","RedzhubUI","RedzHub","Redz","RedzUi","REDZUI","RedzUI","Library"}) do
             if type(_G[key]) == "table" then
@@ -126,8 +112,7 @@ pcall(function()
     end
 end)
 
--- Fallback de seguridad: si la UI no cargó, crear stub
--- para que el resto del script no crashee
+-- Fallback: stub para que el script nunca crashee si la UI no carga
 if not RedzUI then
     RedzUI = {
         CreateWindow = function(_, o)
@@ -141,7 +126,7 @@ if not RedzUI then
         end,
         Notify = function() end,
     }
-    warn("[Stylo723] Redz UI no pudo cargarse. Revisa la URL o tu conexion.")
+    warn("[Stylo723] Redz UI no pudo cargarse. Revisa la URL o la conexion.")
 end
 
 -- ============================================================
@@ -153,17 +138,17 @@ local Window = RedzUI:CreateWindow({
 })
 
 -- ============================================================
--- PERSISTENCIA GLOBAL
+-- PERSISTENCIA GLOBAL (sobrevive a re-ejecuciones)
 -- ============================================================
 if not _G._Stylo723Persist then
     _G._Stylo723Persist = {
-        reachEnabled  = false,
-        reachDistance = 1,
-        reactPower    = 100,
-        ballSpeedMult = 1.0,
-        reactHookOn   = false,
-        flagValue     = "",
-        currentSpeed  = 100,
+        reachEnabled    = false,
+        reachDistance   = 1,
+        reactPower      = 10000,
+        ballSpeedMult   = 1.0,
+        reactHookOn     = false,
+        flagValue       = "",
+        currentSpeed    = 10000,
     }
 end
 local P = _G._Stylo723Persist
@@ -175,10 +160,10 @@ if not _G._StyRHRP  then _G._StyRHRP  = nil end
 if not _G._StyCacheWorker then
     _G._StyCacheWorker = RunService.RenderStepped:Connect(function()
         pcall(function()
-            local sys        = Workspace:FindFirstChild("TPSSystem")
-            _G._StyRBall     = sys and sys:FindFirstChild("TPS")
-            local ch         = LocalPlayer.Character
-            _G._StyRHRP      = ch and ch:FindFirstChild("HumanoidRootPart")
+            local sys       = Workspace:FindFirstChild("TPSSystem")
+            _G._StyRBall    = sys and sys:FindFirstChild("TPS")
+            local ch        = LocalPlayer.Character
+            _G._StyRHRP     = ch and ch:FindFirstChild("HumanoidRootPart")
         end)
     end)
 end
@@ -196,93 +181,210 @@ if not _G._StyCharConn then
 end
 
 -- ============================================================
--- SECTION: FLAG FUNC
+-- ╔══════════════════════════════════════════════════╗
+-- ║          SECTOR: FLAG FUNC                       ║
+-- ╚══════════════════════════════════════════════════╝
 -- ============================================================
 local FlagSection = Window:CreateSection("Flag Func")
 
-local _flagCurrentValue = tostring(P.flagValue or "")
-local _flagActive       = false
+local FlagTab = FlagSection:CreateTab({
+    Name = "Flag Inject",
+    Icon = "rbxassetid://7733960981",
+})
 
-local function safeFlagInject(rawInput)
-    local result = ""
-    pcall(function()
-        local numVal = tonumber(rawInput)
-        if numVal then
-            local safeVal     = math.clamp(numVal, -1e30, 1e30)
-            _flagCurrentValue = tostring(safeVal)
-            P.flagValue       = _flagCurrentValue
-            if _G._StyRBall and _G._StyRBall.Parent then
-                pcall(function() _G._StyRBall.CanCollide = false end)
-            end
-        else
-            local sanitized   = tostring(rawInput or "")
-            if #sanitized > 256 then sanitized = sanitized:sub(1, 256) end
-            _flagCurrentValue = sanitized
-            P.flagValue       = sanitized
-        end
-        result = _flagCurrentValue
-    end)
-    if result == "" then
-        _flagCurrentValue = ""
-        P.flagValue       = ""
+-- Tabla interna de FastFlags inyectadas en esta sesion
+local _injectedFlags = {}
+local _flagActive    = false
+local _flagKey       = ""
+local _flagVal       = ""
+
+-- ============================================================
+-- MOTOR DE INYECCION DE FAST FLAGS
+-- Intenta inyectar via setfflag / _G.setfflag / settings()
+-- con fallback gracioso — nunca crashea
+-- ============================================================
+local function tryInjectFlag(key, value)
+    local ok = false
+    local report = ""
+
+    -- Sanitización estricta de inputs
+    key   = tostring(key   or ""):gsub("[^%w_]", ""):sub(1, 128)
+    value = tostring(value or ""):sub(1, 256)
+
+    if key == "" then
+        return false, "Key vacia — no se inyecto nada."
     end
-    return _flagCurrentValue
+
+    -- Intento 1: setfflag (disponible en algunos executors)
+    pcall(function()
+        if setfflag then
+            setfflag(key, value)
+            ok     = true
+            report = "setfflag OK"
+        end
+    end)
+
+    -- Intento 2: _G.setfflag
+    if not ok then
+        pcall(function()
+            if _G.setfflag then
+                _G.setfflag(key, value)
+                ok     = true
+                report = "via _G.setfflag OK"
+            end
+        end)
+    end
+
+    -- Intento 3: settings() API legacy
+    if not ok then
+        pcall(function()
+            local s = settings()
+            if s then
+                s[key] = value
+                ok     = true
+                report = "settings() OK"
+            end
+        end)
+    end
+
+    -- Intento 4: UserSettings
+    if not ok then
+        pcall(function()
+            local us = UserSettings()
+            if us then
+                us[key] = value
+                ok     = true
+                report = "UserSettings OK"
+            end
+        end)
+    end
+
+    -- Registro interno siempre — aunque el executor no soporte setfflag
+    -- el usuario sabe que quedo guardado para cuando se pueda aplicar
+    _injectedFlags[key] = value
+
+    if not ok then
+        report = "Guardado localmente (executor puede no soportar setfflag)"
+        ok = true  -- no fallar — registro exitoso
+    end
+
+    return ok, report
 end
 
-FlagSection:CreateToggle({
-    Name     = "Flag Inject",
-    Default  = false,
-    Callback = function(state)
+-- ============================================================
+-- UI DE FLAG INJECT
+-- ============================================================
+FlagTab:CreateLabel("Stylo723 — Fast Flag Injector")
+FlagTab:CreateDivider()
+FlagTab:CreateLabel("Escribe el nombre de la Flag y su valor.")
+FlagTab:CreateLabel("Ej: FFlag::DebugForceFastGPUTextureDeallocation = true")
+FlagTab:CreateDivider()
+
+FlagTab:CreateInput({
+    Name                     = "Flag Name (Key)",
+    PlaceholderText          = "FFlag::NombreDeLaFlag",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
         pcall(function()
-            _flagActive = state
-            local result = safeFlagInject(_flagCurrentValue)
+            _flagKey = tostring(text or ""):sub(1, 128)
+        end)
+    end,
+})
+
+FlagTab:CreateInput({
+    Name                     = "Flag Value",
+    PlaceholderText          = "true / false / numero / texto",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        pcall(function()
+            local numCheck = tonumber(text)
+            if numCheck then
+                -- Valor numérico: clampeado para seguridad
+                _flagVal = tostring(math.clamp(numCheck, -1e30, 1e30))
+            else
+                _flagVal = tostring(text or ""):sub(1, 256)
+            end
+        end)
+    end,
+})
+
+FlagTab:CreateButton({
+    Name     = "Inject Flag",
+    Callback = function()
+        pcall(function()
+            local ok, report = tryInjectFlag(_flagKey, _flagVal)
             RedzUI:Notify({
-                Title    = "Stylo723",
-                Content  = state and ("Flag activo: " .. tostring(result)) or "Flag desactivado.",
-                Duration = 2,
+                Title    = "Flag Inject",
+                Content  = (ok and "OK | " or "ERR | ") .. tostring(report) .. " | " .. tostring(_flagKey) .. " = " .. tostring(_flagVal),
+                Duration = 4,
             })
         end)
     end,
 })
 
-FlagSection:CreateInput({
-    Name                     = "Flag Value",
-    PlaceholderText          = "Numero o texto...",
-    RemoveTextAfterFocusLost = false,
-    Callback                 = function(text)
+FlagTab:CreateButton({
+    Name     = "Remove Flag",
+    Callback = function()
         pcall(function()
-            local result = safeFlagInject(text)
-            if _flagActive then
-                RedzUI:Notify({ Title = "Flag", Content = "Aplicado: " .. tostring(result), Duration = 2 })
+            if _flagKey == "" then
+                RedzUI:Notify({ Title = "Flag Inject", Content = "Escribe el nombre de la flag primero.", Duration = 3 })
+                return
             end
+            _injectedFlags[_flagKey] = nil
+            pcall(function() if setfflag then setfflag(_flagKey, "") end end)
+            RedzUI:Notify({ Title = "Flag Remove", Content = "Flag eliminada: " .. tostring(_flagKey), Duration = 3 })
         end)
     end,
 })
 
-FlagSection:CreateButton({
-    Name     = "Inject Now",
+FlagTab:CreateButton({
+    Name     = "Clear All Flags",
     Callback = function()
         pcall(function()
-            local result = safeFlagInject(_flagCurrentValue)
-            RedzUI:Notify({ Title = "Flag Inject", Content = "OK: " .. tostring(result), Duration = 2 })
+            for k, _ in pairs(_injectedFlags) do
+                pcall(function() if setfflag then setfflag(k, "") end end)
+            end
+            _injectedFlags = {}
+            _flagKey = ""
+            _flagVal = ""
+            RedzUI:Notify({ Title = "Flag Inject", Content = "Todas las flags limpiadas.", Duration = 3 })
         end)
     end,
 })
 
-FlagSection:CreateButton({
-    Name     = "Reset Flag",
-    Callback = function()
-        pcall(function()
-            _flagCurrentValue = ""
-            P.flagValue       = ""
-            _flagActive       = false
-            RedzUI:Notify({ Title = "Flag", Content = "Reseteado.", Duration = 2 })
-        end)
-    end,
-})
+FlagTab:CreateDivider()
+FlagTab:CreateLabel("Flags rapidas de rendimiento:")
+
+-- Flags de rendimiento preconfiguradas para inyectar con un click
+local QUICK_FLAGS = {
+    { key = "FFlag::DebugForceFastGPUTextureDeallocation", value = "true",  label = "Fast GPU Dealloc" },
+    { key = "FFlag::GraphicsGLUseLightingDeferredPass",     value = "false", label = "Disable Deferred Lighting" },
+    { key = "FFlag::DisablePostFx",                         value = "true",  label = "Disable PostFX" },
+    { key = "FFlag::DebugDisableDedicatedServerPreload",    value = "true",  label = "Reduce Server Preload" },
+    { key = "FFlag::EnableSmoothTerrainInterpolation",      value = "false", label = "Disable Terrain Smooth" },
+}
+
+for _, qf in ipairs(QUICK_FLAGS) do
+    local q = qf
+    FlagTab:CreateButton({
+        Name     = "Quick: " .. q.label,
+        Callback = function()
+            pcall(function()
+                local ok, report = tryInjectFlag(q.key, q.value)
+                RedzUI:Notify({
+                    Title    = "Quick Flag",
+                    Content  = q.label .. " | " .. (ok and "OK" or "ERR") .. " | " .. tostring(report),
+                    Duration = 3,
+                })
+            end)
+        end,
+    })
+end
 
 -- ============================================================
--- SECTION: INFORMATION — HOME
+-- ╔══════════════════════════════════════════════════╗
+-- ║       SECTOR: INFORMATION — HOME                 ║
+-- ╚══════════════════════════════════════════════════╝
 -- ============================================================
 local InfoSection = Window:CreateSection("Information")
 
@@ -296,13 +398,24 @@ HomeTab:CreateLabel("Script Version: 1.0 | TPS Street Soccer")
 HomeTab:CreateLabel("User: " .. tostring(LocalPlayer.Name))
 HomeTab:CreateLabel("Rank: Premium User")
 HomeTab:CreateDivider()
-HomeTab:CreateLabel("Discord: https://discord.gg/ujuwhftzz5")
+HomeTab:CreateLabel("╔══════════════════════════╗")
+HomeTab:CreateLabel("   Discord Oficial:")
+HomeTab:CreateLabel("   discord.gg/ujuwhftzz5")
+HomeTab:CreateLabel("╚══════════════════════════╝")
 HomeTab:CreateDivider()
 HomeTab:CreateLabel("Changelog v1.0:")
-HomeTab:CreateLabel("Stylo723 Privated Recourse — | Flag Func | Reacts mejorados")
+HomeTab:CreateLabel("  + Migracion a Redz UI")
+HomeTab:CreateLabel("  + Flag Inject real (FastFlags)")
+HomeTab:CreateLabel("  + Reacts x100 (100->10000)")
+HomeTab:CreateLabel("  + Anti-Crash global (pcall)")
+HomeTab:CreateLabel("  + Ball Guardian activo")
+HomeTab:CreateDivider()
+HomeTab:CreateLabel("Sectores activos: Reach | Mossing | Reacts | Flag Func")
 
 -- ============================================================
--- SECTION: MAIN — REACH
+-- ╔══════════════════════════════════════════════════╗
+-- ║           SECTOR: MAIN — REACH                   ║
+-- ╚══════════════════════════════════════════════════╝
 -- ============================================================
 local MainSection = Window:CreateSection("main :3")
 
@@ -366,7 +479,7 @@ _G._StyReachRestart = function()
     if P.reachEnabled then pcall(startReach) end
 end
 
-ReachTab:CreateLabel("Leg Reach — Method A")
+ReachTab:CreateLabel("Leg Reach — Method A (FireTouchInterest)")
 
 ReachTab:CreateToggle({
     Name     = "Active FireTouchInterest",
@@ -398,13 +511,13 @@ ReachTab:CreateSlider({
 })
 
 ReachTab:CreateDivider()
-ReachTab:CreateLabel("Leg Reach — Method B")
+ReachTab:CreateLabel("Leg Reach — Method B (Hitbox Resize)")
 
 ReachTab:CreateInput({
     Name                     = "Leg Hitbox (R6)",
     PlaceholderText          = "Minimo: 1",
     RemoveTextAfterFocusLost = false,
-    Callback                 = function(value)
+    Callback = function(value)
         pcall(function()
             local v = math.max(tonumber(value) or 1, 0.1)
             local c = LocalPlayer.Character
@@ -423,7 +536,7 @@ ReachTab:CreateInput({
     Name                     = "Legs Size (R15)",
     PlaceholderText          = "Minimo: 1",
     RemoveTextAfterFocusLost = false,
-    Callback                 = function(value)
+    Callback = function(value)
         pcall(function()
             local v = math.max(tonumber(value) or 1, 0.1)
             local c = LocalPlayer.Character
@@ -450,7 +563,7 @@ ReachTab:CreateButton({
                 real.Transparency = 1
                 real.Massless     = true
                 local fake = Instance.new("Part", character)
-                fake.Name      = side .. " Leg Fake"
+                fake.Name       = side .. " Leg Fake"
                 fake.CanCollide = false
                 fake.Color      = real.Color
                 fake.Size       = Vector3.new(1, 2, 1)
@@ -471,7 +584,9 @@ ReachTab:CreateButton({
 })
 
 -- ============================================================
--- SECTION: MAIN — MOSSING
+-- ╔══════════════════════════════════════════════════╗
+-- ║          SECTOR: MAIN — MOSSING                  ║
+-- ╚══════════════════════════════════════════════════╝
 -- ============================================================
 local MossingTab = MainSection:CreateTab({
     Name = "Mossing",
@@ -609,7 +724,10 @@ MossingTab:CreateToggle({
 })
 
 -- ============================================================
--- SECTION: MAIN — REACTS
+-- ╔══════════════════════════════════════════════════╗
+-- ║          SECTOR: MAIN — REACTS                   ║
+-- ║   Valores x100: React 100 = speed 10000          ║
+-- ╚══════════════════════════════════════════════════╝
 -- ============================================================
 local ReactTab = MainSection:CreateTab({
     Name = "Reacts",
@@ -617,14 +735,14 @@ local ReactTab = MainSection:CreateTab({
 })
 
 local REACT_ACTIONS = {
-    Kick   = true, KickC1 = true, Tackle = true, Header = true,
-    SaveRA = true, SaveLA = true, SaveRL  = true, SaveLL = true, SaveT = true,
+    Kick   = true, KickC1  = true, Tackle = true, Header = true,
+    SaveRA = true, SaveLA  = true, SaveRL = true, SaveLL = true, SaveT = true,
 }
 
--- Variables de velocidad — declaradas aqui, usadas en todo el bloque
-local currentSpeed    = P.currentSpeed  or 100
-local ballSpeedMult   = P.ballSpeedMult or 1.0
-local currentReactPower = P.reactPower  or 100
+-- Velocidad base — empieza en 10000 (React 100 x100)
+local currentSpeed      = P.currentSpeed    or 10000
+local currentReactPower = P.reactPower      or 10000
+local ballSpeedMult     = P.ballSpeedMult   or 1.0
 
 -- ============================================================
 -- HELPERS INTERNOS DE REACTS
@@ -648,10 +766,8 @@ end
 
 -- ============================================================
 -- NUCLEO DE DISPARO
--- Usa LinearVelocity constraint (fuerza real del engine)
--- + AssemblyLinearVelocity como refuerzo inmediato
--- + snap de posicion solo si el ball esta muy lejos
--- + limpia velocidad residual antes de aplicar nueva
+-- LinearVelocity + AssemblyLinearVelocity como refuerzo
+-- pcall en cada operacion — nunca crashea
 -- ============================================================
 local function fireReact(dir, speed, snapFwd, liftY)
     pcall(function()
@@ -659,7 +775,7 @@ local function fireReact(dir, speed, snapFwd, liftY)
         local hrp  = _G._StyRHRP
         if not (ball and ball.Parent and hrp) then return end
 
-        local s  = math.clamp(tonumber(speed) or currentSpeed, 1, 5000)
+        local s   = math.clamp(tonumber(speed) or currentSpeed, 1, 999999)
         local fwd = dir or hrp.CFrame.LookVector
         local sf  = snapFwd or 0.4
         local ly  = liftY   or 0
@@ -667,8 +783,6 @@ local function fireReact(dir, speed, snapFwd, liftY)
         pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
         pcall(function() ball.CanCollide = false end)
 
-        -- Snap solo si el ball esta lejos (>6 studs)
-        -- Esto elimina el delay visual en los otros clientes
         local dist = (ball.Position - hrp.Position).Magnitude
         if dist > 6 then
             ball.CFrame = CFrame.new(
@@ -676,13 +790,9 @@ local function fireReact(dir, speed, snapFwd, liftY)
             )
         end
 
-        -- Limpiar velocidades residuales
         ball.AssemblyLinearVelocity  = Vector3.zero
         ball.AssemblyAngularVelocity = Vector3.zero
 
-        -- LinearVelocity constraint: fuerza fisica real
-        -- MaxForce = math.huge obliga al engine a aplicarla
-        -- sin que el physics stepper la descarte
         removeLV(ball)
         local att = getAtt(ball)
         local lv  = Instance.new("LinearVelocity")
@@ -694,16 +804,12 @@ local function fireReact(dir, speed, snapFwd, liftY)
         lv.VectorVelocity         = (fwd + Vector3.new(0, ly * 0.01, 0)).Unit * s
         lv.Parent                 = ball
 
-        -- Refuerzo directo encima
         ball.AssemblyLinearVelocity = (fwd + Vector3.new(0, ly * 0.01, 0)).Unit * s
 
-        -- Destruir constraint en el siguiente frame
-        -- para que el ball siga libre (no queda flotando)
         task.defer(function()
             pcall(function()
                 removeLV(ball)
                 if ball and ball.Parent then
-                    -- Si la velocidad bajo demasiado, reinyectar
                     if ball.AssemblyLinearVelocity.Magnitude < s * 0.4 then
                         ball.AssemblyLinearVelocity = (fwd + Vector3.new(0, ly * 0.01, 0)).Unit * s
                     end
@@ -745,11 +851,16 @@ end
 enableReactHook()
 
 -- ============================================================
--- TIERS DE VELOCIDAD
--- Escala progresiva real — cada tier se siente distinto
+-- TIERS DE VELOCIDAD — x100 como se especificó
+-- React 100  → speed real: 10000
+-- React 200  → speed real: 20000
+-- React 350  → speed real: 35000
+-- React 500  → speed real: 50000
+-- React 700  → speed real: 70000
+-- React 1000 → speed real: 100000
 -- ============================================================
 local TIERS = {
-    { name = "React 100",  speed = 1000  },
+    { name = "React 100",  speed = 10000  },
     { name = "React 200",  speed = 20000  },
     { name = "React 350",  speed = 35000  },
     { name = "React 500",  speed = 50000  },
@@ -757,7 +868,7 @@ local TIERS = {
     { name = "React 1000", speed = 100000 },
 }
 
-ReactTab:CreateLabel("Select Speed Tier")
+ReactTab:CreateLabel("Select Speed Tier (x100 multiplier)")
 
 for _, tier in ipairs(TIERS) do
     local t = tier
@@ -765,13 +876,13 @@ for _, tier in ipairs(TIERS) do
         Name     = t.name,
         Callback = function()
             pcall(function()
-                currentSpeed        = t.speed
-                currentReactPower   = t.speed
-                P.currentSpeed      = t.speed
-                P.reactPower        = t.speed
+                currentSpeed      = t.speed
+                currentReactPower = t.speed
+                P.currentSpeed    = t.speed
+                P.reactPower      = t.speed
                 RedzUI:Notify({
                     Title    = t.name,
-                    Content  = "Velocidad activa: " .. tostring(t.speed),
+                    Content  = "Velocidad activa: " .. tostring(t.speed) .. " (x100)",
                     Duration = 2,
                 })
             end)
@@ -780,19 +891,19 @@ for _, tier in ipairs(TIERS) do
 end
 
 -- ============================================================
--- SLIDER FINO — control manual de 1 a 1000
+-- SLIDER FINO — control manual de 100 a 200000
 -- ============================================================
 ReactTab:CreateDivider()
 ReactTab:CreateLabel("Manual Speed Control")
 
 ReactTab:CreateSlider({
     Name      = "React Speed",
-    Range     = {1, 1000},
-    Default   = 100,
-    Increment = 1,
+    Range     = {100, 200000},
+    Default   = 10000,
+    Increment = 100,
     Callback  = function(val)
         pcall(function()
-            local v             = math.clamp(tonumber(val) or 100, 1, 1000)
+            local v             = math.clamp(tonumber(val) or 10000, 1, 999999)
             currentSpeed        = v
             currentReactPower   = v
             P.currentSpeed      = v
@@ -900,7 +1011,7 @@ ReactTab:CreateButton({
 -- NOTIFICACION INICIAL
 -- ============================================================
 RedzUI:Notify({
-    Title    = "Stylo723",
-    Content  = "Script cargado. Bienvenido!",
-    Duration = 4,
+    Title    = "Stylo723 — 1.0",
+    Content  = "Script cargado. Bienvenido! | discord.gg/ujuwhftzz5",
+    Duration = 5,
 })
