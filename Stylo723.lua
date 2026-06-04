@@ -101,8 +101,24 @@ local RedzUI
 pcall(function()
     -- Redz UI asigna la librería a _G.RedzLib o la retorna
     -- Intentamos ambas formas para máxima compatibilidad
-    local loaded = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDZDEVS/REDZUI/main/API.lua"))()
-
+    -- URLs ordenadas de más a menos confiable; se prueba la primera que responda
+    local URLS = {
+        "https://raw.githubusercontent.com/tbao143/Library-ui/main/Redzhubui",
+        "https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui",
+        "https://raw.githubusercontent.com/REDZDEVS/RedzUI/main/Source",
+    }
+    local raw
+    for _, url in ipairs(URLS) do
+        local ok, result = pcall(function()
+            return game:HttpGet(url)
+        end)
+        if ok and type(result) == "string" and #result > 100 then
+            raw = result
+            break
+        end
+    end
+    if not raw then return end
+    local loaded = loadstring(raw)()
     -- Forma 1: la librería se retorna directamente
     if type(loaded) == "table" then
         RedzUI = loaded
@@ -113,7 +129,7 @@ pcall(function()
     end
     -- Forma 3: queda en _G.RedzhubUI o similar
     if not RedzUI then
-        for _, key in pairs({"RedzLib","RedzhubUI","RedzHub","Redz","Library"}) do
+        for _, key in pairs({"RedzLib","RedzhubUI","RedzHub","Redz","RedzUi","REDZUI","RedzUI","Library"}) do
             if type(_G[key]) == "table" then
                 RedzUI = _G[key]
                 break
