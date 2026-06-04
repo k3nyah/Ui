@@ -101,9 +101,8 @@ local RedzUI
 pcall(function()
     -- Redz UI asigna la librería a _G.RedzLib o la retorna
     -- Intentamos ambas formas para máxima compatibilidad
-    local loaded = loadstring(game:HttpGet(
-        "https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"
-    ))()
+    local loaded = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDZDEVS/REDZUI/main/API.lua"))()
+
     -- Forma 1: la librería se retorna directamente
     if type(loaded) == "table" then
         RedzUI = loaded
