@@ -5,7 +5,7 @@
 --  Discord: https://discord.gg/ujuwhftzz5
 -- ============================================================
 
--- Cargar la librería RedzLib V5 (tal como la pediste)
+-- Cargar la librería RedzLib V5
 local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/RedzLibV5/main/Source.Lua"))()
 
 -- Crear la ventana principal
