@@ -101,23 +101,11 @@ local RedzUI
 pcall(function()
     -- Redz UI asigna la librería a _G.RedzLib o la retorna
     -- Intentamos ambas formas para máxima compatibilidad
-    -- URLs ordenadas de más a menos confiable; se prueba la primera que responda
-    local URLS = {
-        "https://raw.githubusercontent.com/tbao143/Library-ui/main/Redzhubui",
-        "https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui",
-        "https://raw.githubusercontent.com/REDZDEVS/RedzUI/main/Source",
-    }
-    local raw
-    for _, url in ipairs(URLS) do
-        local ok, result = pcall(function()
-            return game:HttpGet(url)
-        end)
-        if ok and type(result) == "string" and #result > 100 then
-            raw = result
-            break
-        end
-    end
-    if not raw then return end
+    -- URL verificada y funcional — Redz Library V5 (rawscripts.net mirror estable)
+    local raw = game:HttpGet(
+        "https://rawscripts.net/raw/Universal-Script-Redz-Library-V5-94837"
+    )
+    if not raw or #raw < 100 then return end
     local loaded = loadstring(raw)()
     -- Forma 1: la librería se retorna directamente
     if type(loaded) == "table" then
@@ -311,7 +299,7 @@ HomeTab:CreateDivider()
 HomeTab:CreateLabel("Discord: https://discord.gg/ujuwhftzz5")
 HomeTab:CreateDivider()
 HomeTab:CreateLabel("Changelog v1.0:")
-HomeTab:CreateLabel("Migracion a Redz UI | Flag Func | Reacts mejorados")
+HomeTab:CreateLabel("Stylo723 Privated Recourse — | Flag Func | Reacts mejorados")
 
 -- ============================================================
 -- SECTION: MAIN — REACH
@@ -761,12 +749,12 @@ enableReactHook()
 -- Escala progresiva real — cada tier se siente distinto
 -- ============================================================
 local TIERS = {
-    { name = "React 100",  speed = 100  },
-    { name = "React 200",  speed = 200  },
-    { name = "React 350",  speed = 350  },
-    { name = "React 500",  speed = 500  },
-    { name = "React 700",  speed = 700  },
-    { name = "React 1000", speed = 1000 },
+    { name = "React 100",  speed = 1000  },
+    { name = "React 200",  speed = 20000  },
+    { name = "React 350",  speed = 35000  },
+    { name = "React 500",  speed = 50000  },
+    { name = "React 700",  speed = 70000  },
+    { name = "React 1000", speed = 100000 },
 }
 
 ReactTab:CreateLabel("Select Speed Tier")
