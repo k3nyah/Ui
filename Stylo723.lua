@@ -1,28 +1,391 @@
 -- ============================================================
---  Stylo723 — 1.0
---  Redz UI | Flag Inject (FastFlags) | Anti-Crash | Sin auto-kick
+--  Stylo723 — 1.0 (UI Propia - Sin dependencias externas)
+--  Funciones: Flag Inject, Reach, Mossing, Reacts
+--  Adaptado para móvil | Anti-Crash Global
 --  Discord: https://discord.gg/ujuwhftzz5
 -- ============================================================
 
-local Players          = game:GetService("Players")
-local RunService       = game:GetService("RunService")
-local Workspace        = game:GetService("Workspace")
-local Lighting         = game:GetService("Lighting")
-local LocalPlayer      = Players.LocalPlayer
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 -- ============================================================
--- BALL CANCOLLIDE GUARDIAN
+--  UI PROPIA (Ligera, táctil, escalable)
 -- ============================================================
-local _ballGuardConn
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Stylo723UI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game:GetService("CoreGui")
+
+local function MakeDraggable(frame)
+    local dragging = false
+    local dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- Ventana principal
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 450, 0, 600)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -300)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+MainFrame.BackgroundTransparency = 0.05
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+-- Sombra / borde
+local Shadow = Instance.new("UICorner")
+Shadow.CornerRadius = UDim.new(0, 12)
+Shadow.Parent = MainFrame
+
+-- Barra de título
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = TitleBar
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -40, 1, 0)
+Title.Position = UDim2.new(0, 20, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Stylo723 — 1.0"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.TextSize = 18
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+MakeDraggable(TitleBar)
+
+-- Panel de pestañas
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(1, 0, 0, 40)
+TabContainer.Position = UDim2.new(0, 0, 0, 40)
+TabContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+TabContainer.BorderSizePixel = 0
+TabContainer.Parent = MainFrame
+
+-- Contenedor de contenido
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, 0, 1, -80)
+ContentFrame.Position = UDim2.new(0, 0, 0, 80)
+ContentFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+ContentFrame.BorderSizePixel = 0
+ContentFrame.Parent = MainFrame
+local ContentCorner = Instance.new("UICorner")
+ContentCorner.CornerRadius = UDim.new(0, 8)
+ContentCorner.Parent = ContentFrame
+
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.ScrollBarThickness = 4
+ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100,100,120)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ScrollingFrame.Parent = ContentFrame
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 8)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.Parent = ScrollingFrame
+
+-- Variables para pestañas
+local tabs = {}
+local currentTab = nil
+
+local function CreateTab(name)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 100, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(200,200,220)
+    btn.TextSize = 16
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Parent = TabContainer
+    
+    local contentHolder = Instance.new("Frame")
+    contentHolder.Size = UDim2.new(1, 0, 1, 0)
+    contentHolder.BackgroundTransparency = 1
+    contentHolder.Visible = false
+    contentHolder.Parent = ScrollingFrame
+    local holderList = Instance.new("UIListLayout")
+    holderList.Padding = UDim.new(0, 8)
+    holderList.SortOrder = Enum.SortOrder.LayoutOrder
+    holderList.Parent = contentHolder
+    
+    btn.MouseButton1Click:Connect(function()
+        for _, t in pairs(tabs) do
+            t.btn.BackgroundTransparency = 1
+            t.content.Visible = false
+        end
+        btn.BackgroundTransparency = 0
+        btn.BackgroundColor3 = Color3.fromRGB(60,60,80)
+        contentHolder.Visible = true
+        currentTab = name
+    end)
+    
+    local tab = {btn = btn, content = contentHolder}
+    table.insert(tabs, tab)
+    if #tabs == 1 then
+        btn.BackgroundTransparency = 0
+        btn.BackgroundColor3 = Color3.fromRGB(60,60,80)
+        contentHolder.Visible = true
+    end
+    return contentHolder
+end
+
+local function AddLabel(parent, text)
+    local lbl = Instance.new("TextLabel")
+    lbl.Text = text
+    lbl.Size = UDim2.new(1, -10, 0, 30)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.fromRGB(220,220,240)
+    lbl.TextSize = 14
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = parent
+    return lbl
+end
+
+local function AddDivider(parent)
+    local line = Instance.new("Frame")
+    line.Size = UDim2.new(1, -10, 0, 1)
+    line.BackgroundColor3 = Color3.fromRGB(80,80,100)
+    line.BorderSizePixel = 0
+    line.Parent = parent
+end
+
+local function AddButton(parent, text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(50,50,70)
+    btn.Text = text
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextSize = 16
+    btn.Font = Enum.Font.GothamSemibold
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    btn.Parent = parent
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+local function AddToggle(parent, text, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(45,45,60)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
+    frame.Parent = parent
+    
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -50, 1, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(230,230,250)
+    lbl.TextSize = 14
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = frame
+    
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(0, 40, 0, 30)
+    toggleBtn.Position = UDim2.new(1, -45, 0.5, -15)
+    toggleBtn.BackgroundColor3 = default and Color3.fromRGB(70,200,70) or Color3.fromRGB(120,120,140)
+    toggleBtn.Text = default and "ON" or "OFF"
+    toggleBtn.TextColor3 = Color3.new(1,1,1)
+    toggleBtn.TextSize = 14
+    toggleBtn.Font = Enum.Font.GothamBold
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(0, 6)
+    toggleCorner.Parent = toggleBtn
+    toggleBtn.Parent = frame
+    
+    local state = default
+    toggleBtn.MouseButton1Click:Connect(function()
+        state = not state
+        toggleBtn.BackgroundColor3 = state and Color3.fromRGB(70,200,70) or Color3.fromRGB(120,120,140)
+        toggleBtn.Text = state and "ON" or "OFF"
+        pcall(callback, state)
+    end)
+    pcall(callback, state)
+    return frame
+end
+
+local function AddSlider(parent, text, minv, maxv, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 70)
+    frame.BackgroundColor3 = Color3.fromRGB(45,45,60)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
+    frame.Parent = parent
+    
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 20)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text .. ": " .. tostring(default)
+    lbl.TextColor3 = Color3.fromRGB(230,230,250)
+    lbl.TextSize = 14
+    lbl.Parent = frame
+    
+    local slider = Instance.new("Frame")
+    slider.Size = UDim2.new(1, -20, 0, 6)
+    slider.Position = UDim2.new(0, 10, 0, 35)
+    slider.BackgroundColor3 = Color3.fromRGB(80,80,100)
+    slider.BorderSizePixel = 0
+    slider.Parent = frame
+    local sliderCorner = Instance.new("UICorner")
+    sliderCorner.CornerRadius = UDim.new(1, 0)
+    sliderCorner.Parent = slider
+    
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default-minv)/(maxv-minv), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(70,150,220)
+    fill.BorderSizePixel = 0
+    fill.Parent = slider
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    fillCorner.Parent = fill
+    
+    local valueBtn = Instance.new("TextButton")
+    valueBtn.Size = UDim2.new(0, 40, 0, 30)
+    valueBtn.Position = UDim2.new(fill.Size.X.Scale, -20, 0, -12)
+    valueBtn.BackgroundColor3 = Color3.fromRGB(200,200,220)
+    valueBtn.Text = tostring(default)
+    valueBtn.TextColor3 = Color3.fromRGB(0,0,0)
+    valueBtn.TextSize = 12
+    valueBtn.Parent = slider
+    local valueCorner = Instance.new("UICorner")
+    valueCorner.CornerRadius = UDim.new(0, 6)
+    valueCorner.Parent = valueBtn
+    
+    local function updateSlider(val)
+        val = math.clamp(val, minv, maxv)
+        local perc = (val - minv) / (maxv - minv)
+        fill.Size = UDim2.new(perc, 0, 1, 0)
+        valueBtn.Position = UDim2.new(perc, -20, 0, -12)
+        valueBtn.Text = tostring(math.floor(val))
+        lbl.Text = text .. ": " .. tostring(math.floor(val))
+        pcall(callback, val)
+    end
+    
+    local dragging = false
+    valueBtn.MouseButton1Down:Connect(function()
+        dragging = true
+        local move
+        move = UserInputService.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local mousePos = input.Position.X
+                local sliderAbsPos = slider.AbsolutePosition.X
+                local sliderWidth = slider.AbsoluteSize.X
+                local perc = (mousePos - sliderAbsPos) / sliderWidth
+                local val = minv + perc * (maxv - minv)
+                updateSlider(val)
+            end
+        end)
+        local release
+        release = UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+                move:Disconnect()
+                release:Disconnect()
+            end
+        end)
+    end)
+    
+    updateSlider(default)
+    return frame
+end
+
+local function AddInput(parent, text, placeholder, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 50)
+    frame.BackgroundColor3 = Color3.fromRGB(45,45,60)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
+    frame.Parent = parent
+    
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 20)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(230,230,250)
+    lbl.TextSize = 14
+    lbl.Parent = frame
+    
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(1, -10, 0, 25)
+    box.Position = UDim2.new(0, 5, 0, 22)
+    box.BackgroundColor3 = Color3.fromRGB(30,30,40)
+    box.Text = ""
+    box.PlaceholderText = placeholder
+    box.TextColor3 = Color3.new(1,1,1)
+    box.PlaceholderColor3 = Color3.fromRGB(150,150,170)
+    box.TextSize = 14
+    box.Font = Enum.Font.Gotham
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 4)
+    boxCorner.Parent = box
+    box.Parent = frame
+    box.FocusLost:Connect(function(enter)
+        if enter then pcall(callback, box.Text) end
+    end)
+    return frame
+end
+
+-- ============================================================
+--  BALL GUARDIAN Y SEGURIDAD (Igual que antes)
+-- ============================================================
 local function startBallGuard()
-    if _ballGuardConn then return end
     local function guardBall(ball)
         if not ball or not ball:IsA("BasePart") then return end
         pcall(function() ball.CanCollide = false end)
         ball:GetPropertyChangedSignal("CanCollide"):Connect(function()
-            if ball.CanCollide then
-                pcall(function() ball.CanCollide = false end)
-            end
+            if ball.CanCollide then pcall(function() ball.CanCollide = false end) end
         end)
     end
     local function findAndGuard()
@@ -37,418 +400,138 @@ local function startBallGuard()
     end
     findAndGuard()
     Workspace.ChildAdded:Connect(function(child)
-        if child.Name == "TPSSystem" then
-            task.wait(0.05)
-            findAndGuard()
-        end
+        if child.Name == "TPSSystem" then task.wait(0.05) findAndGuard() end
     end)
 end
 pcall(startBallGuard)
 
--- ============================================================
--- SECURITY / CLEAN — sin kick, limpieza silenciosa
--- ============================================================
 pcall(function()
-    for _, b in pairs(workspace.FE.Actions:GetChildren()) do
-        if b.Name == " " then b:Destroy() end
-    end
-end)
-
-pcall(function()
+    for _, b in pairs(workspace.FE.Actions:GetChildren()) do if b.Name == " " then b:Destroy() end end
     local ch = LocalPlayer.Character
-    if ch then
-        for _, b in pairs(ch:GetChildren()) do
-            if b.Name == " " then b:Destroy() end
-        end
-    end
-end)
-
-pcall(function()
+    if ch then for _, b in pairs(ch:GetChildren()) do if b.Name == " " then b:Destroy() end end end
     local a = workspace.FE.Actions
-    if not a then return end
-    if a:FindFirstChild("KeepYourHeadUp_") then
+    if a and a:FindFirstChild("KeepYourHeadUp_") then
         a.KeepYourHeadUp_:Destroy()
         local r = Instance.new("RemoteEvent")
-        r.Name   = "KeepYourHeadUp_"
+        r.Name = "KeepYourHeadUp_"
         r.Parent = a
     end
 end)
 
-local function isWeirdName(name)
-    return string.match(name, "^[a-zA-Z]+%-%d+%a*%-%d+%a*$") ~= nil
-end
-
-local function deleteWeirdRemoteEvents(parent, depth)
-    depth = depth or 0
-    if depth > 6 then return end
-    pcall(function()
-        for _, child in pairs(parent:GetChildren()) do
-            if child:IsA("RemoteEvent") and isWeirdName(child.Name) then
-                child:Destroy()
-            else
-                deleteWeirdRemoteEvents(child, depth + 1)
-            end
-        end
-    end)
-end
-pcall(function() deleteWeirdRemoteEvents(game) end)
-
 -- ============================================================
--- CARGA DE REDZ UI — nueva URL de respaldo
--- ============================================================
-local RedzUI
-pcall(function()
-    local loaded = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
-    if type(loaded) == "table" then
-        RedzUI = loaded
-    end
-    if not RedzUI then
-        loaded = loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Redz-Library-V5-94837"))()
-        if type(loaded) == "table" then
-            RedzUI = loaded
-        end
-    end
-    if not RedzUI then
-        for _, key in pairs({"RedzLib","RedzhubUI","RedzHub","Redz","RedzUi","REDZUI","RedzUI","Library"}) do
-            if type(_G[key]) == "table" then
-                RedzUI = _G[key]
-                break
-            end
-        end
-    end
-end)
-
--- Fallback: stub para que el script nunca crashee si la UI no carga
-if not RedzUI then
-    RedzUI = {
-        CreateWindow = function(_, o)
-            local w = {}
-            local function stub()
-                local t = {}
-                setmetatable(t, {__index = function() return function() return stub() end end})
-                return t
-            end
-            return setmetatable(w, {__index = function() return stub end})
-        end,
-        Notify = function() end,
-    }
-    warn("[Stylo723] Redz UI no pudo cargarse. Revisa la URL o la conexion.")
-end
-
--- ============================================================
--- VENTANA PRINCIPAL
--- ============================================================
-local Window = RedzUI:CreateWindow({
-    Name   = "Stylo723 — 1.0",
-    Status = "Stylo Team",
-})
-
--- ============================================================
--- PERSISTENCIA GLOBAL (sobrevive a re-ejecuciones)
+--  PERSISTENCIA GLOBAL
 -- ============================================================
 if not _G._Stylo723Persist then
     _G._Stylo723Persist = {
-        reachEnabled    = false,
-        reachDistance   = 1,
-        reactPower      = 10000,
-        ballSpeedMult   = 1.0,
-        reactHookOn     = false,
-        flagValue       = "",
-        currentSpeed    = 10000,
+        reachEnabled = false, reachDistance = 1, reactPower = 10000,
+        currentSpeed = 10000,
     }
 end
 local P = _G._Stylo723Persist
 
--- Cache global de balón y HRP
 if not _G._StyRBall then _G._StyRBall = nil end
-if not _G._StyRHRP  then _G._StyRHRP  = nil end
+if not _G._StyRHRP then _G._StyRHRP = nil end
 
-if not _G._StyCacheWorker then
-    _G._StyCacheWorker = RunService.RenderStepped:Connect(function()
-        pcall(function()
-            local sys       = Workspace:FindFirstChild("TPSSystem")
-            _G._StyRBall    = sys and sys:FindFirstChild("TPS")
-            local ch        = LocalPlayer.Character
-            _G._StyRHRP     = ch and ch:FindFirstChild("HumanoidRootPart")
-        end)
-    end)
-end
-
-if not _G._StyCharConn then
-    _G._StyCharConn = LocalPlayer.CharacterAdded:Connect(function(char)
-        pcall(function()
-            _G._StyRHRP = char:WaitForChild("HumanoidRootPart", 3)
-            if P.reachEnabled and _G._StyReachRestart then
-                task.wait(0.05)
-                _G._StyReachRestart()
-            end
-        end)
-    end)
-end
-
--- ============================================================
--- ╔══════════════════════════════════════════════════╗
--- ║          SECTOR: FLAG FUNC                       ║
--- ╚══════════════════════════════════════════════════╝
--- ============================================================
-local FlagSection = Window:CreateSection("Flag Func")
-
-local FlagTab = FlagSection:CreateTab({
-    Name = "Flag Inject",
-    Icon = "rbxassetid://7733960981",
-})
-
--- Tabla interna de FastFlags inyectadas en esta sesion
-local _injectedFlags = {}
-local _flagActive    = false
-local _flagKey       = ""
-local _flagVal       = ""
-
--- ============================================================
--- MOTOR DE INYECCION DE FAST FLAGS
--- Intenta inyectar via setfflag / _G.setfflag / settings()
--- con fallback gracioso — nunca crashea
--- ============================================================
-local function tryInjectFlag(key, value)
-    local ok = false
-    local report = ""
-
-    -- Sanitización estricta de inputs
-    key   = tostring(key   or ""):gsub("[^%w_]", ""):sub(1, 128)
-    value = tostring(value or ""):sub(1, 256)
-
-    if key == "" then
-        return false, "Key vacia — no se inyecto nada."
-    end
-
-    -- Intento 1: setfflag (disponible en algunos executors)
+RunService.RenderStepped:Connect(function()
     pcall(function()
-        if setfflag then
-            setfflag(key, value)
-            ok     = true
-            report = "setfflag OK"
-        end
+        local sys = Workspace:FindFirstChild("TPSSystem")
+        _G._StyRBall = sys and sys:FindFirstChild("TPS")
+        local ch = LocalPlayer.Character
+        _G._StyRHRP = ch and ch:FindFirstChild("HumanoidRootPart")
     end)
+end)
 
-    -- Intento 2: _G.setfflag
-    if not ok then
-        pcall(function()
-            if _G.setfflag then
-                _G.setfflag(key, value)
-                ok     = true
-                report = "via _G.setfflag OK"
-            end
-        end)
-    end
+LocalPlayer.CharacterAdded:Connect(function(char)
+    pcall(function()
+        _G._StyRHRP = char:WaitForChild("HumanoidRootPart", 3)
+        if P.reachEnabled and _G._StyReachRestart then task.wait(0.05) _G._StyReachRestart() end
+    end)
+end)
 
-    -- Intento 3: settings() API legacy
-    if not ok then
-        pcall(function()
-            local s = settings()
-            if s then
-                s[key] = value
-                ok     = true
-                report = "settings() OK"
-            end
-        end)
-    end
+-- ============================================================
+--  FLAG FUNC (Inyección de FastFlags)
+-- ============================================================
+local flagTab = CreateTab("Flag Func")
+AddLabel(flagTab, "Stylo723 — Fast Flag Injector")
+AddDivider(flagTab)
+AddLabel(flagTab, "Escribe el nombre de la Flag y su valor.")
+AddLabel(flagTab, "Ej: FFlag::DebugForceFastGPUTextureDeallocation = true")
+AddDivider(flagTab)
 
-    -- Intento 4: UserSettings
-    if not ok then
-        pcall(function()
-            local us = UserSettings()
-            if us then
-                us[key] = value
-                ok     = true
-                report = "UserSettings OK"
-            end
-        end)
-    end
+local flagKey = ""
+local flagVal = ""
 
-    -- Registro interno siempre — aunque el executor no soporte setfflag
-    -- el usuario sabe que quedo guardado para cuando se pueda aplicar
-    _injectedFlags[key] = value
+AddInput(flagTab, "Flag Name (Key)", "FFlag::Nombre", function(text) flagKey = tostring(text):sub(1,128) end)
+AddInput(flagTab, "Flag Value", "true / false / numero", function(text) flagVal = tostring(text):sub(1,256) end)
 
-    if not ok then
-        report = "Guardado localmente (executor puede no soportar setfflag)"
-        ok = true  -- no fallar — registro exitoso
-    end
-
+local function tryInjectFlag(key, value)
+    key = tostring(key):gsub("[^%w_]", ""):sub(1,128)
+    value = tostring(value):sub(1,256)
+    if key == "" then return false, "Key vacía" end
+    local ok, report = false, ""
+    pcall(function() if setfflag then setfflag(key, value) ok = true report = "setfflag OK" end end)
+    if not ok then pcall(function() if _G.setfflag then _G.setfflag(key, value) ok = true report = "via _G.setfflag" end end) end
+    if not ok then pcall(function() local s = settings() if s then s[key] = value ok = true report = "settings()" end end) end
+    if not ok then pcall(function() local us = UserSettings() if us then us[key] = value ok = true report = "UserSettings" end end) end
+    if not ok then report = "Guardado localmente (executor no soporta flags)" ok = true end
     return ok, report
 end
 
--- ============================================================
--- UI DE FLAG INJECT
--- ============================================================
-FlagTab:CreateLabel("Stylo723 — Fast Flag Injector")
-FlagTab:CreateDivider()
-FlagTab:CreateLabel("Escribe el nombre de la Flag y su valor.")
-FlagTab:CreateLabel("Ej: FFlag::DebugForceFastGPUTextureDeallocation = true")
-FlagTab:CreateDivider()
+AddButton(flagTab, "Inject Flag", function()
+    pcall(function()
+        local ok, report = tryInjectFlag(flagKey, flagVal)
+        AddLabel(flagTab, "→ " .. (ok and "OK" or "ERR") .. " | " .. report .. " | " .. flagKey .. " = " .. flagVal):Destroy()
+    end)
+end)
 
-FlagTab:CreateInput({
-    Name                     = "Flag Name (Key)",
-    PlaceholderText          = "FFlag::NombreDeLaFlag",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        pcall(function()
-            _flagKey = tostring(text or ""):sub(1, 128)
-        end)
-    end,
-})
+AddButton(flagTab, "Remove Flag", function()
+    if flagKey == "" then return end
+    pcall(function() if setfflag then setfflag(flagKey, "") end end)
+    AddLabel(flagTab, "→ Flag eliminada: " .. flagKey):Destroy()
+end)
 
-FlagTab:CreateInput({
-    Name                     = "Flag Value",
-    PlaceholderText          = "true / false / numero / texto",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        pcall(function()
-            local numCheck = tonumber(text)
-            if numCheck then
-                -- Valor numérico: clampeado para seguridad
-                _flagVal = tostring(math.clamp(numCheck, -1e30, 1e30))
-            else
-                _flagVal = tostring(text or ""):sub(1, 256)
-            end
-        end)
-    end,
-})
-
-FlagTab:CreateButton({
-    Name     = "Inject Flag",
-    Callback = function()
-        pcall(function()
-            local ok, report = tryInjectFlag(_flagKey, _flagVal)
-            RedzUI:Notify({
-                Title    = "Flag Inject",
-                Content  = (ok and "OK | " or "ERR | ") .. tostring(report) .. " | " .. tostring(_flagKey) .. " = " .. tostring(_flagVal),
-                Duration = 4,
-            })
-        end)
-    end,
-})
-
-FlagTab:CreateButton({
-    Name     = "Remove Flag",
-    Callback = function()
-        pcall(function()
-            if _flagKey == "" then
-                RedzUI:Notify({ Title = "Flag Inject", Content = "Escribe el nombre de la flag primero.", Duration = 3 })
-                return
-            end
-            _injectedFlags[_flagKey] = nil
-            pcall(function() if setfflag then setfflag(_flagKey, "") end end)
-            RedzUI:Notify({ Title = "Flag Remove", Content = "Flag eliminada: " .. tostring(_flagKey), Duration = 3 })
-        end)
-    end,
-})
-
-FlagTab:CreateButton({
-    Name     = "Clear All Flags",
-    Callback = function()
-        pcall(function()
-            for k, _ in pairs(_injectedFlags) do
-                pcall(function() if setfflag then setfflag(k, "") end end)
-            end
-            _injectedFlags = {}
-            _flagKey = ""
-            _flagVal = ""
-            RedzUI:Notify({ Title = "Flag Inject", Content = "Todas las flags limpiadas.", Duration = 3 })
-        end)
-    end,
-})
-
-FlagTab:CreateDivider()
-FlagTab:CreateLabel("Flags rapidas de rendimiento:")
-
--- Flags de rendimiento preconfiguradas para inyectar con un click
-local QUICK_FLAGS = {
-    { key = "FFlag::DebugForceFastGPUTextureDeallocation", value = "true",  label = "Fast GPU Dealloc" },
-    { key = "FFlag::GraphicsGLUseLightingDeferredPass",     value = "false", label = "Disable Deferred Lighting" },
-    { key = "FFlag::DisablePostFx",                         value = "true",  label = "Disable PostFX" },
-    { key = "FFlag::DebugDisableDedicatedServerPreload",    value = "true",  label = "Reduce Server Preload" },
-    { key = "FFlag::EnableSmoothTerrainInterpolation",      value = "false", label = "Disable Terrain Smooth" },
-}
-
-for _, qf in ipairs(QUICK_FLAGS) do
-    local q = qf
-    FlagTab:CreateButton({
-        Name     = "Quick: " .. q.label,
-        Callback = function()
-            pcall(function()
-                local ok, report = tryInjectFlag(q.key, q.value)
-                RedzUI:Notify({
-                    Title    = "Quick Flag",
-                    Content  = q.label .. " | " .. (ok and "OK" or "ERR") .. " | " .. tostring(report),
-                    Duration = 3,
-                })
-            end)
-        end,
-    })
-end
+AddButton(flagTab, "Clear All Flags", function()
+    pcall(function()
+        for k,_ in pairs(_G._injectedFlags or {}) do if setfflag then setfflag(k,"") end end
+        _G._injectedFlags = {}
+        AddLabel(flagTab, "→ Todas las flags limpiadas"):Destroy()
+    end)
+end)
 
 -- ============================================================
--- ╔══════════════════════════════════════════════════╗
--- ║       SECTOR: INFORMATION — HOME                 ║
--- ╚══════════════════════════════════════════════════╝
+--  HOME (Información)
 -- ============================================================
-local InfoSection = Window:CreateSection("Information")
-
-local HomeTab = InfoSection:CreateTab({
-    Name = "Home",
-    Icon = "rbxassetid://7733960981",
-})
-
-HomeTab:CreateLabel("Stylo723 — 1.0")
-HomeTab:CreateLabel("Script Version: 1.0 | TPS Street Soccer")
-HomeTab:CreateLabel("User: " .. tostring(LocalPlayer.Name))
-HomeTab:CreateLabel("Rank: Premium User")
-HomeTab:CreateDivider()
-HomeTab:CreateLabel("╔══════════════════════════╗")
-HomeTab:CreateLabel("   Discord Oficial:")
-HomeTab:CreateLabel("   discord.gg/ujuwhftzz5")
-HomeTab:CreateLabel("╚══════════════════════════╝")
-HomeTab:CreateDivider()
-HomeTab:CreateLabel("Changelog v1.0:")
-HomeTab:CreateLabel("  + Migracion a Redz UI")
-HomeTab:CreateLabel("  + Flag Inject real (FastFlags)")
-HomeTab:CreateLabel("  + Reacts x100 (100->10000)")
-HomeTab:CreateLabel("  + Anti-Crash global (pcall)")
-HomeTab:CreateLabel("  + Ball Guardian activo")
-HomeTab:CreateDivider()
-HomeTab:CreateLabel("Sectores activos: Reach | Mossing | Reacts | Flag Func")
+local homeTab = CreateTab("Home")
+AddLabel(homeTab, "Stylo723 — 1.0")
+AddLabel(homeTab, "Script Version: 1.0 | TPS Street Soccer")
+AddLabel(homeTab, "User: " .. LocalPlayer.Name)
+AddDivider(homeTab)
+AddLabel(homeTab, "Discord Oficial:")
+AddLabel(homeTab, "discord.gg/ujuwhftzz5")
+AddDivider(homeTab)
+AddLabel(homeTab, "Sectores activos: Reach | Mossing | Reacts | Flag Func")
 
 -- ============================================================
--- ╔══════════════════════════════════════════════════╗
--- ║           SECTOR: MAIN — REACH                   ║
--- ╚══════════════════════════════════════════════════╝
+--  REACH
 -- ============================================================
-local MainSection = Window:CreateSection("main :3")
-
-local ReachTab = MainSection:CreateTab({
-    Name = "Reach",
-    Icon = "rbxassetid://7733960981",
-})
-
-local reachEnabled  = P.reachEnabled
+local reachTab = CreateTab("Reach")
+local reachEnabled = P.reachEnabled
 local reachDistance = P.reachDistance
 local reachConnection
 
 local function startReach()
     pcall(function()
         if reachConnection then reachConnection:Disconnect() end
-        local _char, _root, _hum, _tps, _limb = nil, nil, nil, nil, nil
-        local _lastRig, _frameSkip = nil, 0
+        local _char, _root, _hum, _tps, _limb, _lastRig, _frameSkip = nil, nil, nil, nil, nil, nil, 0
         reachConnection = RunService.RenderStepped:Connect(function()
             pcall(function()
                 local character = LocalPlayer.Character
                 if not character then return end
                 if character ~= _char then
-                    _char    = character
-                    _root    = character:FindFirstChild("HumanoidRootPart")
-                    _hum     = character:FindFirstChild("Humanoid")
-                    _limb    = nil
-                    _lastRig = nil
+                    _char = character
+                    _root = character:FindFirstChild("HumanoidRootPart")
+                    _hum = character:FindFirstChild("Humanoid")
+                    _limb = nil
                 end
                 if not (_root and _hum) then return end
                 _frameSkip = _frameSkip + 1
@@ -457,18 +540,15 @@ local function startReach()
                     local sys = Workspace:FindFirstChild("TPSSystem")
                     _tps = sys and sys:FindFirstChild("TPS")
                 end
-                if not _tps or not _tps.Parent then return end
-                local d = (_root.Position - _tps.Position)
-                if (d.X*d.X + d.Y*d.Y + d.Z*d.Z) > reachDistance * reachDistance then return end
+                if not _tps then return end
+                if (_root.Position - _tps.Position).Magnitude > reachDistance then return end
                 local rig = _hum.RigType
                 if rig ~= _lastRig or not _limb or not _limb.Parent then
                     _lastRig = rig
-                    local pf   = Lighting:FindFirstChild(LocalPlayer.Name)
+                    local pf = Lighting:FindFirstChild(LocalPlayer.Name)
                     local foot = pf and pf:FindFirstChild("PreferredFoot")
                     if foot then
-                        local nm = (rig == Enum.HumanoidRigType.R6)
-                            and ((foot.Value == 1) and "Right Leg" or "Left Leg")
-                            or  ((foot.Value == 1) and "RightLowerLeg" or "LeftLowerLeg")
+                        local nm = (rig == Enum.HumanoidRigType.R6) and ((foot.Value == 1) and "Right Leg" or "Left Leg") or ((foot.Value == 1) and "RightLowerLeg" or "LeftLowerLeg")
                         _limb = _char:FindFirstChild(nm)
                     end
                 end
@@ -485,539 +565,212 @@ _G._StyReachRestart = function()
     if P.reachEnabled then pcall(startReach) end
 end
 
-ReachTab:CreateLabel("Leg Reach — Method A (FireTouchInterest)")
-
-ReachTab:CreateToggle({
-    Name     = "Active FireTouchInterest",
-    Default  = false,
-    Callback = function(state)
-        pcall(function()
-            reachEnabled   = state
-            P.reachEnabled = state
-            if state then
-                startReach()
-            else
-                if reachConnection then reachConnection:Disconnect(); reachConnection = nil end
-            end
-        end)
-    end,
-})
-
-ReachTab:CreateSlider({
-    Name      = "Reach Distance",
-    Range     = {1, 15},
-    Default   = 1,
-    Increment = 1,
-    Callback  = function(val)
-        pcall(function()
-            reachDistance   = tonumber(val) or 1
-            P.reachDistance = reachDistance
-        end)
-    end,
-})
-
-ReachTab:CreateDivider()
-ReachTab:CreateLabel("Leg Reach — Method B (Hitbox Resize)")
-
-ReachTab:CreateInput({
-    Name                     = "Leg Hitbox (R6)",
-    PlaceholderText          = "Minimo: 1",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(value)
-        pcall(function()
-            local v = math.max(tonumber(value) or 1, 0.1)
-            local c = LocalPlayer.Character
-            if not c then return end
-            for _, n in pairs({"Right Leg", "Left Leg"}) do
-                local p = c:FindFirstChild(n)
-                if p then p.Size = Vector3.new(v, 2, v); p.CanCollide = false end
-            end
-            local hrp = c:FindFirstChild("HumanoidRootPart")
-            if hrp then hrp.Size = Vector3.new(v, 2, v); hrp.CanCollide = false end
-        end)
-    end,
-})
-
-ReachTab:CreateInput({
-    Name                     = "Legs Size (R15)",
-    PlaceholderText          = "Minimo: 1",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(value)
-        pcall(function()
-            local v = math.max(tonumber(value) or 1, 0.1)
-            local c = LocalPlayer.Character
-            if not c then return end
-            for _, n in pairs({"RightLowerLeg", "LeftLowerLeg"}) do
-                local p = c:FindFirstChild(n)
-                if p then p.Size = Vector3.new(v, 2, v); p.CanCollide = false end
-            end
-            local hrp = c:FindFirstChild("HumanoidRootPart")
-            if hrp then hrp.Size = Vector3.new(v, 2, v); hrp.CanCollide = false end
-        end)
-    end,
-})
-
-ReachTab:CreateButton({
-    Name     = "Fake Legs (Appear Normal)",
-    Callback = function()
-        pcall(function()
-            local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-            local humanoid  = character:WaitForChild("Humanoid")
-            if humanoid.RigType ~= Enum.HumanoidRigType.R6 then return end
-            for _, side in pairs({"Left", "Right"}) do
-                local real = character[side .. " Leg"]
-                real.Transparency = 1
-                real.Massless     = true
-                local fake = Instance.new("Part", character)
-                fake.Name       = side .. " Leg Fake"
-                fake.CanCollide = false
-                fake.Color      = real.Color
-                fake.Size       = Vector3.new(1, 2, 1)
-                fake.Position   = real.Position
-                local motor = Instance.new("Motor6D", character.Torso)
-                motor.Part0 = character.Torso
-                motor.Part1 = fake
-                if side == "Left" then
-                    motor.C0 = CFrame.new(-1,-1,0,0,0,-1,0,1,0,1,0,0)
-                    motor.C1 = CFrame.new(-0.5,1,0,0,0,-1,0,1,0,1,0,0)
-                else
-                    motor.C0 = CFrame.new(1,-1,0,0,0,1,0,1,0,-1,0,0)
-                    motor.C1 = CFrame.new(0.5,1,0,0,0,1,0,1,0,-1,0,0)
-                end
-            end
-        end)
-    end,
-})
+AddLabel(reachTab, "Leg Reach — FireTouchInterest")
+AddToggle(reachTab, "Active FireTouchInterest", reachEnabled, function(state)
+    reachEnabled = state
+    P.reachEnabled = state
+    if state then startReach() else if reachConnection then reachConnection:Disconnect() end end
+end)
+AddSlider(reachTab, "Reach Distance", 1, 15, reachDistance, function(val) reachDistance = val; P.reachDistance = val end)
+AddDivider(reachTab)
+AddLabel(reachTab, "Hitbox Resize (R6/R15)")
+AddInput(reachTab, "Leg Size (R6)", "Ej: 2", function(v)
+    local sz = math.max(tonumber(v) or 1, 0.1)
+    local c = LocalPlayer.Character
+    if c then
+        for _,n in pairs({"Right Leg","Left Leg"}) do
+            local p = c:FindFirstChild(n)
+            if p then p.Size = Vector3.new(sz,2,sz); p.CanCollide = false end
+        end
+        local hrp = c:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Size = Vector3.new(sz,2,sz); hrp.CanCollide = false end
+    end
+end)
+AddInput(reachTab, "Legs Size (R15)", "Ej: 2", function(v)
+    local sz = math.max(tonumber(v) or 1, 0.1)
+    local c = LocalPlayer.Character
+    if c then
+        for _,n in pairs({"RightLowerLeg","LeftLowerLeg"}) do
+            local p = c:FindFirstChild(n)
+            if p then p.Size = Vector3.new(sz,2,sz); p.CanCollide = false end
+        end
+        local hrp = c:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Size = Vector3.new(sz,2,sz); hrp.CanCollide = false end
+    end
+end)
 
 -- ============================================================
--- ╔══════════════════════════════════════════════════╗
--- ║          SECTOR: MAIN — MOSSING                  ║
--- ╚══════════════════════════════════════════════════╝
+--  MOSSING (Head Reach)
 -- ============================================================
-local MossingTab = MainSection:CreateTab({
-    Name = "Mossing",
-    Icon = "rbxassetid://7733960981",
-})
-
-local headReachEnabled = false
-local headReachSize    = Vector3.new(1, 1.5, 1)
-local headTransparency = 0.5
-local headOffset       = Vector3.new(0, 0, 0)
-local headBoxPart
-local headConnection
+local mossingTab = CreateTab("Mossing")
+local headEnabled = false
+local headSize = Vector3.new(1,1.5,1)
+local headTrans = 0.5
+local headOffset = Vector3.new(0,0,0)
+local headBox, headConn
 
 local function updateHeadBox()
-    pcall(function()
-        if headBoxPart then headBoxPart:Destroy() end
-        headBoxPart              = Instance.new("Part")
-        headBoxPart.Size         = headReachSize
-        headBoxPart.Transparency = headTransparency
-        headBoxPart.Anchored     = true
-        headBoxPart.CanCollide   = false
-        headBoxPart.Color        = Color3.fromRGB(200, 30, 30)
-        headBoxPart.Material     = Enum.Material.Neon
-        headBoxPart.Name         = "HeadReachBox"
-        headBoxPart.Parent       = Workspace
-    end)
+    if headBox then headBox:Destroy() end
+    headBox = Instance.new("Part")
+    headBox.Size = headSize
+    headBox.Transparency = headTrans
+    headBox.Anchored = true
+    headBox.CanCollide = false
+    headBox.Color = Color3.fromRGB(200,30,30)
+    headBox.Material = Enum.Material.Neon
+    headBox.Name = "HeadReachBox"
+    headBox.Parent = Workspace
 end
 
 local function startHeadReach()
-    if not headReachEnabled then return end
-    pcall(function()
-        if headConnection then headConnection:Disconnect() end
-        updateHeadBox()
-        local _head, _tps, _char = nil, nil, nil
-        local _skipFrame = 0
-        headConnection = RunService.RenderStepped:Connect(function()
-            pcall(function()
-                local character = LocalPlayer.Character
-                if not character then return end
-                if character ~= _char then
-                    _char = character
-                    _head = character:FindFirstChild("Head")
-                end
-                if not _head or not _head.Parent then return end
-                _skipFrame = _skipFrame + 1
-                if _skipFrame >= 4 then
-                    _skipFrame = 0
-                    local sys = Workspace:FindFirstChild("TPSSystem")
-                    _tps = sys and sys:FindFirstChild("TPS")
-                end
-                if not _tps or not _tps.Parent then return end
-                if _tps.CanCollide then pcall(function() _tps.CanCollide = false end) end
-                headBoxPart.CFrame = _head.CFrame * CFrame.new(headOffset)
-                local relative = headBoxPart.CFrame:PointToObjectSpace(_tps.Position)
-                local hs = headBoxPart.Size * 0.5
-                if math.abs(relative.X) <= hs.X
-                    and math.abs(relative.Y) <= hs.Y
-                    and math.abs(relative.Z) <= hs.Z then
-                    firetouchinterest(_head, _tps, 0)
-                    firetouchinterest(_head, _tps, 1)
-                end
-            end)
+    if not headEnabled then return end
+    if headConn then headConn:Disconnect() end
+    updateHeadBox()
+    local _head, _tps, _char = nil, nil, nil
+    headConn = RunService.RenderStepped:Connect(function()
+        pcall(function()
+            local char = LocalPlayer.Character
+            if not char then return end
+            if char ~= _char then _char = char; _head = char:FindFirstChild("Head") end
+            if not _head then return end
+            local sys = Workspace:FindFirstChild("TPSSystem")
+            _tps = sys and sys:FindFirstChild("TPS")
+            if not _tps then return end
+            if _tps.CanCollide then _tps.CanCollide = false end
+            headBox.CFrame = _head.CFrame * CFrame.new(headOffset)
+            local rel = headBox.CFrame:PointToObjectSpace(_tps.Position)
+            local hs = headBox.Size * 0.5
+            if math.abs(rel.X)<=hs.X and math.abs(rel.Y)<=hs.Y and math.abs(rel.Z)<=hs.Z then
+                firetouchinterest(_head, _tps, 0)
+                firetouchinterest(_head, _tps, 1)
+            end
         end)
     end)
 end
 
-MossingTab:CreateToggle({
-    Name     = "Active Moss Reach",
-    Default  = false,
-    Callback = function(state)
-        pcall(function()
-            headReachEnabled = state
-            if state then
-                startHeadReach()
-            else
-                if headConnection then headConnection:Disconnect() end
-                if headBoxPart then headBoxPart:Destroy() end
-            end
-        end)
-    end,
-})
-
-MossingTab:CreateSlider({
-    Name      = "Range X",
-    Range     = {0, 50},
-    Default   = 1,
-    Increment = 0.5,
-    Callback  = function(val)
-        pcall(function()
-            headReachSize = Vector3.new(tonumber(val) or 1, headReachSize.Y, headReachSize.Z)
-            if headReachEnabled then updateHeadBox() end
-        end)
-    end,
-})
-
-MossingTab:CreateSlider({
-    Name      = "Range Y",
-    Range     = {0, 50},
-    Default   = 1.5,
-    Increment = 0.5,
-    Callback  = function(val)
-        pcall(function()
-            local v = tonumber(val) or 1.5
-            headReachSize = Vector3.new(headReachSize.X, v, headReachSize.Z)
-            headOffset    = Vector3.new(headOffset.X, v / 2.5, headOffset.Z)
-            if headReachEnabled then updateHeadBox() end
-        end)
-    end,
-})
-
-MossingTab:CreateSlider({
-    Name      = "Range Z",
-    Range     = {0, 50},
-    Default   = 1,
-    Increment = 0.5,
-    Callback  = function(val)
-        pcall(function()
-            headReachSize = Vector3.new(headReachSize.X, headReachSize.Y, tonumber(val) or 1)
-            if headReachEnabled then updateHeadBox() end
-        end)
-    end,
-})
-
-MossingTab:CreateToggle({
-    Name     = "Stealth Mode",
-    Default  = false,
-    Callback = function(v)
-        pcall(function()
-            headTransparency = v and 1 or 0.5
-            if headReachEnabled and headBoxPart then
-                headBoxPart.Transparency = headTransparency
-            end
-        end)
-    end,
-})
+AddToggle(mossingTab, "Active Moss Reach", false, function(state)
+    headEnabled = state
+    if state then startHeadReach() else if headConn then headConn:Disconnect() end if headBox then headBox:Destroy() end end
+end)
+AddSlider(mossingTab, "Range X", 0, 50, 1, function(val) headSize = Vector3.new(val, headSize.Y, headSize.Z); if headEnabled then updateHeadBox() end end)
+AddSlider(mossingTab, "Range Y", 0, 50, 1.5, function(val) headSize = Vector3.new(headSize.X, val, headSize.Z); headOffset = Vector3.new(headOffset.X, val/2.5, headOffset.Z); if headEnabled then updateHeadBox() end end)
+AddSlider(mossingTab, "Range Z", 0, 50, 1, function(val) headSize = Vector3.new(headSize.X, headSize.Y, val); if headEnabled then updateHeadBox() end end)
+AddToggle(mossingTab, "Stealth Mode", false, function(v) headTrans = v and 1 or 0.5; if headBox then headBox.Transparency = headTrans end end)
 
 -- ============================================================
--- ╔══════════════════════════════════════════════════╗
--- ║          SECTOR: MAIN — REACTS                   ║
--- ║   Valores x100: React 100 = speed 10000          ║
--- ╚══════════════════════════════════════════════════╝
+--  REACTS (Con hook y velocidad x100)
 -- ============================================================
-local ReactTab = MainSection:CreateTab({
-    Name = "Reacts",
-    Icon = "rbxassetid://7733960981",
-})
+local reactTab = CreateTab("Reacts")
+local currentSpeed = P.currentSpeed or 10000
+local REACT_ACTIONS = {Kick=true, KickC1=true, Tackle=true, Header=true, SaveRA=true, SaveLA=true, SaveRL=true, SaveLL=true, SaveT=true}
 
-local REACT_ACTIONS = {
-    Kick   = true, KickC1  = true, Tackle = true, Header = true,
-    SaveRA = true, SaveLA  = true, SaveRL = true, SaveLL = true, SaveT = true,
-}
-
--- Velocidad base — empieza en 10000 (React 100 x100)
-local currentSpeed      = P.currentSpeed    or 10000
-local currentReactPower = P.reactPower      or 10000
-local ballSpeedMult     = P.ballSpeedMult   or 1.0
-
--- ============================================================
--- HELPERS INTERNOS DE REACTS
--- ============================================================
-local function getAtt(ball)
-    local att = ball:FindFirstChild("_StyAtt")
-    if not att then
-        att        = Instance.new("Attachment")
-        att.Name   = "_StyAtt"
-        att.Parent = ball
-    end
-    return att
-end
-
-local function removeLV(ball)
-    pcall(function()
-        local lv = ball:FindFirstChild("_StyLV")
-        if lv then lv:Destroy() end
-    end)
-end
-
--- ============================================================
--- NUCLEO DE DISPARO
--- LinearVelocity + AssemblyLinearVelocity como refuerzo
--- pcall en cada operacion — nunca crashea
--- ============================================================
 local function fireReact(dir, speed, snapFwd, liftY)
     pcall(function()
         local ball = _G._StyRBall
-        local hrp  = _G._StyRHRP
-        if not (ball and ball.Parent and hrp) then return end
-
-        local s   = math.clamp(tonumber(speed) or currentSpeed, 1, 999999)
+        local hrp = _G._StyRHRP
+        if not (ball and hrp) then return end
+        speed = math.clamp(speed, 1, 999999)
         local fwd = dir or hrp.CFrame.LookVector
-        local sf  = snapFwd or 0.4
-        local ly  = liftY   or 0
-
+        local sf = snapFwd or 0.4
         pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
-        pcall(function() ball.CanCollide = false end)
-
-        local dist = (ball.Position - hrp.Position).Magnitude
-        if dist > 6 then
-            ball.CFrame = CFrame.new(
-                hrp.Position + fwd * sf + Vector3.new(0, ly, 0)
-            )
+        ball.CanCollide = false
+        if (ball.Position - hrp.Position).Magnitude > 6 then
+            ball.CFrame = CFrame.new(hrp.Position + fwd*sf + Vector3.new(0, liftY or 0, 0))
         end
-
-        ball.AssemblyLinearVelocity  = Vector3.zero
-        ball.AssemblyAngularVelocity = Vector3.zero
-
-        removeLV(ball)
-        local att = getAtt(ball)
-        local lv  = Instance.new("LinearVelocity")
-        lv.Name                   = "_StyLV"
-        lv.Attachment0            = att
-        lv.MaxForce               = math.huge
-        lv.RelativeTo             = Enum.ActuatorRelativeTo.World
+        ball.AssemblyLinearVelocity = Vector3.zero
+        local att = ball:FindFirstChild("_StyAtt") or Instance.new("Attachment", ball)
+        att.Name = "_StyAtt"
+        local lv = Instance.new("LinearVelocity")
+        lv.Attachment0 = att
+        lv.MaxForce = math.huge
+        lv.RelativeTo = Enum.ActuatorRelativeTo.World
         lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
-        lv.VectorVelocity         = (fwd + Vector3.new(0, ly * 0.01, 0)).Unit * s
-        lv.Parent                 = ball
-
-        ball.AssemblyLinearVelocity = (fwd + Vector3.new(0, ly * 0.01, 0)).Unit * s
-
+        lv.VectorVelocity = (fwd + Vector3.new(0, (liftY or 0)*0.01, 0)).Unit * speed
+        lv.Parent = ball
+        ball.AssemblyLinearVelocity = (fwd + Vector3.new(0, (liftY or 0)*0.01, 0)).Unit * speed
         task.defer(function()
             pcall(function()
-                removeLV(ball)
-                if ball and ball.Parent then
-                    if ball.AssemblyLinearVelocity.Magnitude < s * 0.4 then
-                        ball.AssemblyLinearVelocity = (fwd + Vector3.new(0, ly * 0.01, 0)).Unit * s
-                    end
+                if lv then lv:Destroy() end
+                if ball and ball.Parent and ball.AssemblyLinearVelocity.Magnitude < speed*0.4 then
+                    ball.AssemblyLinearVelocity = (fwd + Vector3.new(0, (liftY or 0)*0.01, 0)).Unit * speed
                 end
             end)
         end)
     end)
 end
 
--- ============================================================
--- NAMECALL HOOK — unico, instalado una sola vez en _G
--- ============================================================
-local function enableReactHook()
-    pcall(function()
-        if _G._StyReactHookInstalled then return end
+-- Hook namecall
+pcall(function()
+    if not _G._StyReactHookInstalled then
         _G._StyReactHookInstalled = true
-
-        local meta        = getrawmetatable(game)
-        local oldNamecall = meta.namecall
+        local meta = getrawmetatable(game)
+        local old = meta.namecall
         setreadonly(meta, false)
-
         meta.namecall = newcclosure(function(self, ...)
             local method = getnamecallmethod()
             if method == "FireServer" and REACT_ACTIONS[tostring(self)] then
                 pcall(function()
-                    local ball = _G._StyRBall
-                    local hrp  = _G._StyRHRP
-                    if not (ball and ball.Parent and hrp) then return end
-                    fireReact(hrp.CFrame.LookVector, currentSpeed, 0.4, 0)
+                    local hrp = _G._StyRHRP
+                    if hrp then fireReact(hrp.CFrame.LookVector, currentSpeed, 0.4, 0) end
                 end)
             end
-            return oldNamecall(self, ...)
+            return old(self, ...)
         end)
-
         setreadonly(meta, true)
-    end)
+    end
+end)
+
+AddLabel(reactTab, "Velocidad x100 (React 100 = 10000)")
+local tiers = {{"React 100",10000},{"React 200",20000},{"React 350",35000},{"React 500",50000},{"React 700",70000},{"React 1000",100000}}
+for _,t in ipairs(tiers) do
+    AddButton(reactTab, t[1], function() currentSpeed = t[2]; P.currentSpeed = t[2]; AddLabel(reactTab, "→ Velocidad: "..t[2]):Destroy() end)
 end
+AddDivider(reactTab)
+AddSlider(reactTab, "React Speed", 100, 200000, currentSpeed, function(v) currentSpeed = v; P.currentSpeed = v end)
+AddDivider(reactTab)
+AddButton(reactTab, "Ground Shot", function()
+    local hrp = _G._StyRHRP
+    if hrp then fireReact(hrp.CFrame.LookVector, currentSpeed, 0.4, 0) end
+end)
+AddButton(reactTab, "Lifted Shot", function()
+    local hrp = _G._StyRHRP
+    if hrp then
+        local look = hrp.CFrame.LookVector
+        local angle = math.rad(20)
+        local dir = Vector3.new(look.X*math.cos(angle), math.sin(angle), look.Z*math.cos(angle)).Unit
+        fireReact(dir, currentSpeed, 0.4, 0)
+    end
+end)
+AddButton(reactTab, "Aerial Shot", function()
+    local hrp = _G._StyRHRP
+    if hrp then
+        local look = hrp.CFrame.LookVector
+        local angle = math.rad(35)
+        local dir = Vector3.new(look.X*math.cos(angle), math.sin(angle), look.Z*math.cos(angle)).Unit
+        fireReact(dir, currentSpeed, 0.3, 0)
+    end
+end)
+AddButton(reactTab, "Snap and Fire", function()
+    local ball, hrp = _G._StyRBall, _G._StyRHRP
+    if ball and hrp then
+        pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
+        ball.CanCollide = false
+        local look = hrp.CFrame.LookVector
+        ball.CFrame = CFrame.new(hrp.Position + look*0.3 + Vector3.new(0,0.1,0))
+        ball.AssemblyLinearVelocity = Vector3.zero
+        task.wait()
+        fireReact(look, currentSpeed, 0, 0)
+    end
+end)
+AddButton(reactTab, "Goalkeeper Clear", function()
+    local hrp = _G._StyRHRP
+    if hrp then
+        local look = hrp.CFrame.LookVector
+        local angle = math.rad(15)
+        local dir = Vector3.new(look.X*math.cos(angle), math.sin(angle), look.Z*math.cos(angle)).Unit
+        fireReact(dir, currentSpeed, 0.4, 0)
+    end
+end)
 
-enableReactHook()
-
--- ============================================================
--- TIERS DE VELOCIDAD — x100 como se especificó
--- React 100  → speed real: 10000
--- React 200  → speed real: 20000
--- React 350  → speed real: 35000
--- React 500  → speed real: 50000
--- React 700  → speed real: 70000
--- React 1000 → speed real: 100000
--- ============================================================
-local TIERS = {
-    { name = "React 100",  speed = 10000  },
-    { name = "React 200",  speed = 20000  },
-    { name = "React 350",  speed = 35000  },
-    { name = "React 500",  speed = 50000  },
-    { name = "React 700",  speed = 70000  },
-    { name = "React 1000", speed = 100000 },
-}
-
-ReactTab:CreateLabel("Select Speed Tier (x100 multiplier)")
-
-for _, tier in ipairs(TIERS) do
-    local t = tier
-    ReactTab:CreateButton({
-        Name     = t.name,
-        Callback = function()
-            pcall(function()
-                currentSpeed      = t.speed
-                currentReactPower = t.speed
-                P.currentSpeed    = t.speed
-                P.reactPower      = t.speed
-                RedzUI:Notify({
-                    Title    = t.name,
-                    Content  = "Velocidad activa: " .. tostring(t.speed) .. " (x100)",
-                    Duration = 2,
-                })
-            end)
-        end,
-    })
-end
-
--- ============================================================
--- SLIDER FINO — control manual de 100 a 200000
--- ============================================================
-ReactTab:CreateDivider()
-ReactTab:CreateLabel("Manual Speed Control")
-
-ReactTab:CreateSlider({
-    Name      = "React Speed",
-    Range     = {100, 200000},
-    Default   = 10000,
-    Increment = 100,
-    Callback  = function(val)
-        pcall(function()
-            local v             = math.clamp(tonumber(val) or 10000, 1, 999999)
-            currentSpeed        = v
-            currentReactPower   = v
-            P.currentSpeed      = v
-            P.reactPower        = v
-        end)
-    end,
-})
-
--- ============================================================
--- DISPAROS MANUALES
--- ============================================================
-ReactTab:CreateDivider()
-ReactTab:CreateLabel("Manual Fire")
-
-ReactTab:CreateButton({
-    Name     = "Ground Shot",
-    Callback = function()
-        pcall(function()
-            local hrp = _G._StyRHRP
-            if not hrp then return end
-            fireReact(hrp.CFrame.LookVector, currentSpeed, 0.4, 0)
-            RedzUI:Notify({ Title = "Ground Shot", Content = tostring(currentSpeed) .. " s/s", Duration = 1 })
-        end)
-    end,
-})
-
-ReactTab:CreateButton({
-    Name     = "Lifted Shot",
-    Callback = function()
-        pcall(function()
-            local hrp = _G._StyRHRP
-            if not hrp then return end
-            local look  = hrp.CFrame.LookVector
-            local angle = math.rad(20)
-            local dir   = Vector3.new(
-                look.X * math.cos(angle),
-                math.sin(angle),
-                look.Z * math.cos(angle)
-            ).Unit
-            fireReact(dir, currentSpeed, 0.4, 0)
-            RedzUI:Notify({ Title = "Lifted Shot", Content = tostring(currentSpeed) .. " s/s | 20deg", Duration = 1 })
-        end)
-    end,
-})
-
-ReactTab:CreateButton({
-    Name     = "Aerial Shot",
-    Callback = function()
-        pcall(function()
-            local hrp = _G._StyRHRP
-            if not hrp then return end
-            local look  = hrp.CFrame.LookVector
-            local angle = math.rad(35)
-            local dir   = Vector3.new(
-                look.X * math.cos(angle),
-                math.sin(angle),
-                look.Z * math.cos(angle)
-            ).Unit
-            fireReact(dir, currentSpeed, 0.3, 0)
-            RedzUI:Notify({ Title = "Aerial Shot", Content = tostring(currentSpeed) .. " s/s | 35deg", Duration = 1 })
-        end)
-    end,
-})
-
-ReactTab:CreateButton({
-    Name     = "Snap and Fire",
-    Callback = function()
-        pcall(function()
-            local ball = _G._StyRBall
-            local hrp  = _G._StyRHRP
-            if not (ball and hrp) then return end
-            pcall(function() ball:SetNetworkOwner(LocalPlayer) end)
-            pcall(function() ball.CanCollide = false end)
-            local look = hrp.CFrame.LookVector
-            ball.CFrame = CFrame.new(hrp.Position + look * 0.3 + Vector3.new(0, 0.1, 0))
-            ball.AssemblyLinearVelocity  = Vector3.zero
-            ball.AssemblyAngularVelocity = Vector3.zero
-            task.wait()
-            fireReact(look, currentSpeed, 0, 0)
-            RedzUI:Notify({ Title = "Snap and Fire", Content = tostring(currentSpeed) .. " s/s", Duration = 1 })
-        end)
-    end,
-})
-
-ReactTab:CreateButton({
-    Name     = "Goalkeeper Clear",
-    Callback = function()
-        pcall(function()
-            local hrp = _G._StyRHRP
-            if not hrp then return end
-            local look  = hrp.CFrame.LookVector
-            local angle = math.rad(15)
-            local dir   = Vector3.new(
-                look.X * math.cos(angle),
-                math.sin(angle),
-                look.Z * math.cos(angle)
-            ).Unit
-            fireReact(dir, currentSpeed, 0.4, 0)
-            RedzUI:Notify({ Title = "GK Clear", Content = tostring(currentSpeed) .. " s/s", Duration = 1 })
-        end)
-    end,
-})
-
--- ============================================================
--- NOTIFICACION INICIAL
--- ============================================================
-RedzUI:Notify({
-    Title    = "Stylo723 — 1.0",
-    Content  = "Script cargado. Bienvenido! | discord.gg/ujuwhftzz5",
-    Duration = 5,
-})
+-- Notificación de inicio
+AddLabel(homeTab, "Script cargado correctamente. ¡Disfruta Stylo723!")
