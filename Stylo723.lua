@@ -1,12 +1,18 @@
 -- ============================================================
 --  Stylo723 — 1.0
---  Librería: RedzLib V5 (Oficial)
+--  Librería: RedzLib V5 (URL CORRECTA)
 --  Funciones: Flag Inject | Reach | Mossing | Reacts
 --  Discord: https://discord.gg/ujuwhftzz5
 -- ============================================================
 
--- Cargar la librería RedzLib V5
-local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/RedzLibV5/main/Source.Lua"))()
+-- Cargar la librería RedzLib V5 (URL funcional proporcionada por el usuario)
+local redzlib = loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Redz-Library-V5-94837"))()
+
+-- Verificar si la librería se cargó correctamente
+if not redzlib then
+    print("[Stylo723] Error: No se pudo cargar RedzLib. Revisa tu conexión o la URL.")
+    return
+end
 
 -- Crear la ventana principal
 local Window = redzlib:MakeWindow({
