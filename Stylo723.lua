@@ -12,7 +12,7 @@ local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzH
 local Window = redzlib:MakeWindow({
     Title = "Stylo723 — 1.0",
     SubTitle = "by 0_Kenyah",
-    SaveFolder = "Stylo723Config.lua"
+    SaveFolder = "Stylo723Config"
 })
 
 -- ============================================================
