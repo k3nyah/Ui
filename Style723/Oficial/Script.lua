@@ -303,7 +303,7 @@ local HomeTab = Window:MakeTab({"Home", "house"})
 HomeTab:AddDiscordInvite({
     Name        = "Stylo723 — Comunidad Oficial",
     Description = "Únete al servidor de Discord del script.",
-    Logo        = "rbxassetid://18751483361",
+    Logo        = "rbxassetid://96308139812879",
     Invite      = "By 0_Kenyah",
 })
 
